@@ -2,22 +2,28 @@
 {% load static %}
 
 {% block childBody %}
-    <link rel="stylesheet" href="{% static 'app\home.css' %}">
-    <link rel="stylesheet" href="{% static 'app\home.js' %}">
+<link rel="stylesheet" href="{% static 'app/home.css' %}">
+<script src="{% static 'app/home.js' %}"></script>
 
-    <div class="bg"></div>
-    <div class="bg bg2"></div>
-    <div class="bg bg3"></div>
-    <div class="home-content">
-        Weather's ready for you!
-    </div>
-    <div id="button-space">
-            <a><button class="home-button">Get started</button></a>
-            <br>
-            <a><button class="home-button">Sign up</button></a>
-            <br>
-            <a><button class="home-button">Log in</button></a>
 
-    </div>
+<section class="hero duna-hero" style="--hero-image: url('{% static 'app/img/landscape_1.jpg' %}')">
     
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+
+  <div class="container hero-center">
+    <h1>Image quality matters <br>before analysis begins.</h1>
+    <p>
+      This platform explores how machine learning can be used as a preprocessing and quality-control step in remote sensing workflows.
+    </p>
+
+    <div class="hero-actions hero-actions-center">
+      <a class="btn btn-primary" href="{% url 'mapview' %}">View Global Conditions</a>
+      <a class="btn btn-ghost" href="{% url 'mapview' %}">Run an Image Assessment</a>
+    </div>
+  </div>
+
+  <div id="heroSentinel"></div>
+</section>
+
 {% endblock %}

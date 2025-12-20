@@ -17,6 +17,10 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+STATICFILES_DIRS = [
+    BASE_DIR / "app" / "static",
+]
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -25,9 +29,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-g%3voez9hm2gkusr_425@6b+3mm)r^6=hk(u^f4h@ep*5zslky'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['havaon.pythonanywhere.com', '.vercel.app']
+ALLOWED_HOSTS = ['havaon.pythonanywhere.com', '.vercel.app', '127.0.0.1']
 
 
 # Application definition

@@ -1,0 +1,152 @@
+{% extends 'app/layout.html' %}
+{% load static %}
+
+{% block childBody %}
+<link rel="stylesheet" href="{% static 'app/analysis.css' %}">
+<script defer src="{% static 'app/analysis.js' %}"></script>
+
+<section class="page">
+  <div class="container page-inner">
+
+    <div class="page-header">
+      <div>
+        <div class="kicker">Assessment</div>
+        <h1 class="title">Image quality assessment</h1>
+        <p class="subtitle">
+          Select a model, upload one or more images, and get cloud-cover based usability signals for downstream workflows.
+        </p>
+      </div>
+
+      <div class="status-pill" id="statusPill" data-state="ready">
+        <span class="dot"></span>
+        <span class="status-text">Ready</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel card">
+        <div class="card-head">
+          <div class="card-title">Run assessment</div>
+          <div class="card-hint">Choose model · Upload images · Analyze</div>
+        </div>
+
+        <form id="analysisForm" class="form" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="field">
+            <label for="modelSelect">Model</label>
+            <div class="select-wrap">
+              <select id="modelSelect" name="model" required>
+                <option value="cloudqc-lite">CloudQC Lite (fast)</option>
+                <option value="cloudqc-pro">CloudQC Pro (balanced)</option>
+                <option value="cloudqc-max">CloudQC Max (highest accuracy)</option>
+              </select>
+              <span class="select-icon">⌄</span>
+            </div>
+            <div class="help">
+              Tip: start with <strong>Lite</strong> for fast iteration, then compare results with <strong>Pro</strong>.
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Images</label>
+
+            <div class="drop" id="dropZone" role="button" tabindex="0" aria-label="Upload images">
+              <input id="imageInput" name="images" type="file" accept="image/*" multiple hidden>
+              <div class="drop-inner">
+                <div class="drop-icon">⬡</div>
+                <div class="drop-title">Drop images here</div>
+                <div class="drop-sub">or <button type="button" class="link-btn" id="browseBtn">browse files</button></div>
+              </div>
+            </div>
+
+            <div class="meta-row">
+              <div class="mini">
+                <div class="mini-k">Selected</div>
+                <div class="mini-v" id="fileCount">0</div>
+              </div>
+              <div class="mini">
+                <div class="mini-k">Limit</div>
+                <div class="mini-v">Up to 50</div>
+              </div>
+              <div class="mini">
+                <div class="mini-k">Output</div>
+                <div class="mini-v">Quality labels</div>
+              </div>
+            </div>
+
+            <div class="file-chips" id="fileChips" aria-live="polite"></div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary" id="runBtn">
+              <span class="btn-ic">▶</span>
+              <span>Run</span>
+            </button>
+            <button type="button" class="btn btn-ghost" id="resetBtn">Reset</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field">
+            <label for="threshold">Cloud threshold</label>
+            <div class="range-row">
+              <input id="threshold" name="threshold" type="range" min="0" max="100" value="50">
+              <span class="range-val" id="thresholdVal">50%</span>
+            </div>
+            <div class="help muted">
+              Higher threshold = stricter acceptance (fewer images marked “Good”).
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="results">
+        <div class="card results-top">
+          <div class="card-head inline">
+            <div>
+              <div class="card-title">Results</div>
+              <div class="card-hint">Neat, visual, and export-ready</div>
+            </div>
+            <div class="results-actions">
+              <button class="btn btn-ghost btn-sm" id="exportBtn" type="button">Export JSON</button>
+              <button class="btn btn-ghost btn-sm" id="clearResultsBtn" type="button">Clear</button>
+            </div>
+          </div>
+
+          <div class="summary" id="summary">
+            <div class="summary-item">
+              <div class="summary-k">Good</div>
+              <div class="summary-v" id="goodCount">0</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-k">Bad</div>
+              <div class="summary-v" id="badCount">0</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-k">Avg cloud</div>
+              <div class="summary-v" id="avgCloud">—</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-k">Model</div>
+              <div class="summary-v" id="modelName">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card grid-card">
+          <div class="empty" id="emptyState">
+            <div class="empty-ic">◎</div>
+            <div class="empty-title">No results yet</div>
+            <div class="empty-sub">Upload images and click <strong>Run</strong>.</div>
+          </div>
+
+          <div class="result-grid" id="resultGrid" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}

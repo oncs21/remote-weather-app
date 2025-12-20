@@ -1,66 +1,106 @@
-@import url('https://fonts.googleapis.com/css?family=Muli&display=swap');
-@import url('https://fonts.googleapis.com/css?family=Inter&display=swap');
-
-.bg {
-  animation: slide 3s ease-in-out infinite alternate;
-  background-image: linear-gradient(-60deg, #6c3 50%, #09f 50%);
-  bottom: 0;
-  left: -50%;
-  opacity: 0.5;
-  position: fixed;
-  right: -50%;
-  top: 0;
-  z-index: -1;
+:root {
+  --header-h: 74px;
 }
 
-.bg2 {
-  animation-direction: alternate-reverse;
-  animation-duration: 4s;
+.duna-hero {
+  min-height: calc(100vh - 74px);
+  display: grid;
+  place-items: center;
+  text-align: center;
 }
 
-.bg3 {
-  animation-duration: 5s;
-}
-
-@keyframes slide {
-  0% {
-    transform: translateX(-25%);
-  }
-  100% {
-    transform: translateX(25%);
-  }
-}
-
-.home-content {
-    font-family: 'Inter';
-    font-size: 50px;
-    color: white;
-    font-weight: bolder;
-    text-align: center;
-    position: relative;
-    top: 200px;
-}
-
-#button-space {
+.hero {
   position: relative;
-  top: 250px;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
-.home-button {
-  border: none;
-  background-color: #09f;
-  color: white;
+.duna-hero .hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center top;
+  transform: scale(1.02);
+  filter: saturate(1.2) contrast(1.12) brightness(1.02);
+  image-rendering: auto;
+}
+
+.duna-hero .hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(251, 251, 250, 0.25);
+  background-image: linear-gradient(
+    rgba(251, 251, 250, 0.28),
+    rgba(251, 251, 250, 0.28)
+  );
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(251, 251, 250, 0.18);
+}
+
+.hero-center {
+  position: relative;
+  margin: 0 auto;
+}
+
+.hero-center h1 {
+  font-size: clamp(46px, 6.2vw, 96px);
+  letter-spacing: -2px;
+  line-height: 0.98;
+  margin: 0 0 18px;
+  font-weight: 700;
+}
+
+.hero-center p {
+  margin: 0 auto 26px;
+  max-width: 62ch;
   font-size: 18px;
-  height: 30px;
-  margin-bottom: 20px;
-  border-radius: 5px;
-  padding: 5px;
-  text-align: center;
-  width: 160px;
-  font-family: 'Verdana';
+  color: rgba(20, 20, 20, 0.6);
 }
 
-.home-button:hover {
-  background-color: blue;
+.hero-actions-center {
+  justify-content: center;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fa-sync,
+.fa-3x {
+  display: none !important;
+}
+
+#heroSentinel {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.hero-center h1 {
+  font-weight: 650;
+}
+
+.site-header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 50;
+  transition: background 0.25s ease, backdrop-filter 0.25s ease;
 }

@@ -17,6 +17,19 @@ from django.urls import reverse
 import json
 from metar import Metar
 
+import uuid
+import shutil
+import torch
+
+from pipeline.src.model import ResNet18_CustomHead
+from pipeline.src.utils import load_images_from_path, get_default_test_transforms
+from pipeline.src.inference import infer_on_unknown_data
+from pathlib import Path
+from django.conf import settings
+
+TEMP_DIR = Path(settings.BASE_DIR) / "pipeline" / "temp_data"
+MODEL_WEIGHTS_PATH = Path(settings.BASE_DIR) / "pipeline" / "models"
+
 # Home page view
 def weatherView(request):
     storeVisitorInfo(request)
@@ -91,6 +104,60 @@ def docsPageView(request, contentFile):
     return render(request, 'app/docs.html', {
         'content': content,
     })
+
+
+def analysisPageView(request):
+    if request.method == "POST":
+        # jsonData = json.loads(request.body)
+
+        os.makedirs(TEMP_DIR, exist_ok=True)
+
+        for p in TEMP_DIR.iterdir():
+            if not p.is_dir():
+                continue
+
+            shutil.rmtree(p)
+
+        req_dir = TEMP_DIR / uuid.uuid4().hex
+        req_dir.mkdir(parents=True, exist_ok=True)
+        
+
+        modelType = request.POST.get('model-type')
+        
+        uploaded_files = request.FILES.getlist('images')
+
+        for f in uploaded_files:
+            file_name = Path(f.name).name
+            ext = Path(file_name).suffix.lower()
+
+            final_file_name = f'image-{uuid.uuid4().hex[:8]}{ext}'
+
+            with open(req_dir / final_file_name, "wb") as dest:
+                for chunk in f.chunks():
+                    dest.write(chunk)
+
+        
+        images = load_images_from_path(req_dir)
+        test_tfms = get_default_test_transforms()
+        model = None
+        device = 'cuda'
+
+        model = ResNet18_CustomHead(
+                num_classes=5,
+            ).to(device)
+        
+        ckpt = torch.load(MODEL_WEIGHTS_PATH / "resnet18_model.pth", map_location=device)
+        state_dict = ckpt["model_state_dict"]
+        model.load_state_dict(state_dict)
+
+        pred_labels = infer_on_unknown_data(images, model, device, test_tfms)
+        print(pred_labels)
+
+        return JsonResponse({
+            'labels': pred_labels
+        })
+
+    return render(request, 'app/analysis.html')
 
 
 def loginPageView(request):

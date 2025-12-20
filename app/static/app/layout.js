@@ -1,39 +1,36 @@
-document.addEventListener('DOMContentLoaded', function() {
-    handleToggledNavbar();
-    showLoader();
-})
+document.addEventListener("DOMContentLoaded", () => {
+  const header = document.getElementById("siteHeader");
+  const burger = document.getElementById("navBurger");
+  const mobileMenu = document.getElementById("mobileMenu");
+  const sentinel = document.getElementById("heroSentinel");
 
-function cb(response) {
-    document.getElementById('visits').innerText = response.value;
-}
+  if (burger && mobileMenu) {
+    burger.addEventListener("click", () => mobileMenu.classList.toggle("is-open"));
+  }
 
-function handleToggledNavbar() {
-    let contentButton = document.querySelector('#toggleButton');
-        let count = 0;
-        contentButton.addEventListener('click', function() {
-            let contentMenu = document.querySelector('.toggled-navbar-contents');
-            
-            if (count == 0) {
-                contentMenu.style.display = "block";
-                count = 1;
-            }
-            else if (count == 1) {
-                contentMenu.style.display = "none";
-                count = 0;
-            }
-        });
-}
+  if (!header) return;
 
-function showLoader() {
-    let mapLink = document.querySelectorAll('.mapview-link');
-    let loader = document.querySelector('.fa-3x');
-    mapLink.forEach(link => {
-        link.onclick = function() {
-            loader.style.display = "block";
+  const setMode = (mode) => {
+    header.classList.remove("is-hero", "is-solid");
+    header.classList.add(mode);
+  };
 
-        }
-    })
-    // mapLink.addEventListener('click', function() {
-    //     loader.style.display = "block";
-    // })
-}
+  setMode("is-hero");
+
+  if (sentinel && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        setMode(entry.isIntersecting ? "is-hero" : "is-solid");
+      },
+      {
+        threshold: 0,
+        rootMargin: "-74px 0px 0px 0px" 
+      }
+    );
+    io.observe(sentinel);
+  } else {
+    const onScroll = () => setMode(window.scrollY < 10 ? "is-hero" : "is-solid");
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+});
