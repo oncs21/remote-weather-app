@@ -38,25 +38,10 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
-def plotPoint(coords, pointMap, visibility, city):
-    for c, v, ci in zip(coords, visibility, city):
-        vis = ""
-        vis = v
-        if vis is None or (c[0] == -1 and c[1] == -1):
-            continue
-        if "greater than " in v:
-            vis = vis.replace("greater than ", "")
-        if " meters" in v:
-            vis = vis.replace(" meters", "")
-        vis = int(vis)
-        markerColor = 'green'
-        
-        if int(vis) <= 1000:
-            markerColor = 'red'
-        elif int(vis) <= 1500:
-            markerColor = 'yellow'
-        else:
-            markerColor = 'green'
+def plotPoint(coords, pointMap, city):
+    for c, ci in zip(coords, city):
+        markerColor = 'blue'
+
         folium.CircleMarker(
             location=[c[0], c[1]],
             radius=2,

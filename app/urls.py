@@ -9,7 +9,7 @@ urlpatterns = [
     path("profile/<int:userId>", views.profilePageView, name="profile"),
     path("profile/edit/<int:userId>", views.editPageView, name="edit"),
     path("livedata", views.liveDataPageView, name="livedata"),
-    path("mapview", views.mapView, name="mapview"),
+    path("global-map-view", views.mapView, name="mapview"),
     path("tools", views.ToolsPageView, name="tools"),
     path("analysis", views.analysisPageView, name="analysis")
 ]

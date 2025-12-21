@@ -20,6 +20,7 @@ from metar import Metar
 import uuid
 import shutil
 import torch
+import pandas as pd
 
 from pipeline.src.model import ResNet18_CustomHead
 from pipeline.src.utils import load_images_from_path, get_default_test_transforms
@@ -29,6 +30,7 @@ from django.conf import settings
 
 TEMP_DIR = Path(settings.BASE_DIR) / "pipeline" / "temp_data"
 MODEL_WEIGHTS_PATH = Path(settings.BASE_DIR) / "pipeline" / "models"
+GEO_DATA_DIR = Path(settings.BASE_DIR) / "app" / "static" / "app" / "files" / "country-capital-lat-long-population.csv"
 
 # Home page view
 def weatherView(request):
@@ -447,29 +449,37 @@ def mapView(request):
     #         continue
     #     else:
     #         visibility += c.visibility
+
+
+    data = pd.read_csv(GEO_DATA_DIR)
+    geo_dict = {}
+
+    for i in range(data.shape[0]):
+        city = data.iloc[i, 1]
+        lat = data.iloc[i, 2]
+        long = data.iloc[i, 3]
+
+        geo_dict[city] = [lat, long]
         
     m = folium.Map(
         location=[20.5937, 78.9629],
         width='90%', 
         height='90%',
-        zoom_start=4,
+        zoom_start=2,
         max_zoom=10,
-        min_zoom=4,
+        min_zoom=2,
         max_bounds=True,
-        tiles="Stamen",
         prefer_canvas=True,
         attr="<a href=https://endless-sky.github.io/>Endless Sky</a>",
     )
+
     geolocator = Nominatim(user_agent="this-weather-project")
     coords = []
-    for c in weatherData.objects.all():
-        point = geolocator.geocode(c.city)
-        if point is not None:
-            coords.append([point.latitude, point.longitude])
-        if point is None:
-            coords.append([-1,-1])
-    point = geolocator.geocode("New Delhi")
-    plotPoint(coords, m, visibility, city)
+
+    for city in geo_dict.keys():
+        coords.append(geo_dict[city])
+
+    plotPoint(coords, m, list(geo_dict.keys()))
     m = m._repr_html_()
     
     return render(request, 'app/mapview.html', {
