@@ -5,6 +5,8 @@ import base64
 from io import BytesIO
 import folium, json
 from .models import Visitor, User
+from branca.element import MacroElement, Template
+
 
 def storeVisitorInfo(request):
     ip = get_client_ip(request)
@@ -39,15 +41,59 @@ def get_client_ip(request):
     return ip
 
 def plotPoint(coords, pointMap, city):
-    for c, ci in zip(coords, city):
+    for i, (c, ci) in enumerate(zip(coords, city)):
+        if c[0] is None or c[1] is None:
+            continue
+
         markerColor = 'blue'
 
-        folium.CircleMarker(
+        popup_div_id = f"weather_{i}"
+        popup_html = f"""
+        <div>
+          <b>{ci}</b><br>
+          <div id="{popup_div_id}">Click marker to load weather…</div>
+        </div>
+        """
+
+        marker = folium.CircleMarker(
             location=[c[0], c[1]],
             radius=2,
             weight=5,
             color=markerColor,
-        ).add_child(folium.Popup(ci)).add_to(pointMap)
+        )
+
+        marker.add_to(pointMap)
+        folium.Popup(popup_html, max_width=250).add_to(marker)
+
+        js = f"""
+        {{% macro script(this, kwargs) %}}
+        var marker = {marker.get_name()};
+        marker.on('click', function(e) {{
+            var target = document.getElementById("{popup_div_id}");
+            if (!target) return;
+            target.innerHTML = "Loading…";
+
+            fetch("/weather/?lat={c[0]}&lon={c[1]}")
+              .then(r => r.json())
+              .then(data => {{
+                  if (data.error) {{
+                      target.innerHTML = "Error: " + data.error;
+                      return;
+                  }}
+                  target.innerHTML =
+                      "Temp: " + data.temp_c + " °C<br>" +
+                      "Wind: " + data.wind_kph + " km/h<br>" +
+                      "Code: " + data.weather_code;
+              }})
+              .catch(err => {{
+                  target.innerHTML = "Failed to load weather";
+              }});
+        }});
+        {{% endmacro %}}
+        """
+        macro = MacroElement()
+        macro._template = Template(js)
+        pointMap.get_root().add_child(macro)
 
 # def highlightCountry(country, countryMap):
 #     with open('A:/Django Projects/weather project/weather/app/countries.geojson') as handle:

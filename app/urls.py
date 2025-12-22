@@ -11,5 +11,7 @@ urlpatterns = [
     path("livedata", views.liveDataPageView, name="livedata"),
     path("global-map-view", views.mapView, name="mapview"),
     path("tools", views.ToolsPageView, name="tools"),
-    path("analysis", views.analysisPageView, name="analysis")
+    path("analysis", views.analysisPageView, name="analysis"),
+    path("weather/", views.weather_api, name="weather_api"),
+
 ]

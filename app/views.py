@@ -21,6 +21,7 @@ import uuid
 import shutil
 import torch
 import pandas as pd
+import requests
 
 from pipeline.src.model import ResNet18_CustomHead
 from pipeline.src.utils import load_images_from_path, get_default_test_transforms
@@ -480,14 +481,34 @@ def mapView(request):
         coords.append(geo_dict[city])
 
     plotPoint(coords, m, list(geo_dict.keys()))
-    m = m._repr_html_()
+    map_html = m._repr_html_()
     
     return render(request, 'app/mapview.html', {
-        'm': m,
+        'm': map_html,
         'sm': coords,
         'vis': visibility,
         'cit': city
     })
+
+
+def weather_api(request):
+    lat = request.GET.get('lat')
+    lon = request.GET.get('lon')
+
+    url = (
+        f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,wind_speed_10m,weather_code"
+    )
+    r = requests.get(url, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+
+    current = data.get("current", {})
+    return JsonResponse({
+        "temp_c": current.get("temperature_2m"),
+        "wind_kph": current.get("wind_speed_10m"),
+        "weather_code": current.get("weather_code"),
+    })
+
 
 def ToolsPageView(request):
     if request.method == "POST":
