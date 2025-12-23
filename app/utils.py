@@ -6,6 +6,11 @@ from io import BytesIO
 import folium, json
 from .models import Visitor, User
 from branca.element import MacroElement, Template
+from django.conf import settings
+from pathlib import Path
+
+
+DEFAULT_WEATHER_ICON_PATH = Path(settings.BASE_DIR) / "app" / "static" / "app" / "img" / "weather_unknown.png"
 
 
 def storeVisitorInfo(request):
@@ -42,8 +47,6 @@ def get_client_ip(request):
 
 def plotPoint(coords, pointMap, city):
     for i, (c, ci) in enumerate(zip(coords, city)):
-        if c[0] is None or c[1] is None:
-            continue
 
         markerColor = 'blue'
 
@@ -55,11 +58,10 @@ def plotPoint(coords, pointMap, city):
         </div>
         """
 
-        marker = folium.CircleMarker(
+        marker = folium.Marker(
             location=[c[0], c[1]],
-            radius=2,
-            weight=5,
             color=markerColor,
+            icon=folium.CustomIcon(str(DEFAULT_WEATHER_ICON_PATH), icon_size=(20, 20))
         )
 
         marker.add_to(pointMap)
@@ -67,8 +69,17 @@ def plotPoint(coords, pointMap, city):
 
         js = f"""
         {{% macro script(this, kwargs) %}}
-        var marker = {marker.get_name()};
-        marker.on('click', function(e) {{
+        const m_{i} = {marker.get_name()};
+
+        function getWeatherIcon(code) {{
+            if (code <= 1) return "/static/app/img/sunny.png";
+            if (code >= 2 && code <= 3) return "/static/app/img/cloudy.png";
+            if (code == 61 || code == 63 || code == 65) return "/static/app/img/rainy.png";
+            if (code == 71 || code == 73 || code == 75) return "/static/app/img/snowy.png";
+            return "/static/app/img/weather_unknown.png";
+        }}
+
+        m_{i}.on('click', function(e) {{
             var target = document.getElementById("{popup_div_id}");
             if (!target) return;
             target.innerHTML = "Loading…";
@@ -84,6 +95,16 @@ def plotPoint(coords, pointMap, city):
                       "Temp: " + data.temp_c + " °C<br>" +
                       "Wind: " + data.wind_kph + " km/h<br>" +
                       "Code: " + data.weather_code;
+
+                  var iconUrl = getWeatherIcon(data.weather_code)
+                  var newIcon = L.icon({{
+                    iconUrl: iconUrl,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30],
+                    popupAnchor: [0, -30]
+                  }});
+
+                  m_{i}.setIcon(newIcon);
               }})
               .catch(err => {{
                   target.innerHTML = "Failed to load weather";
@@ -93,7 +114,9 @@ def plotPoint(coords, pointMap, city):
         """
         macro = MacroElement()
         macro._template = Template(js)
-        pointMap.get_root().add_child(macro)
+        marker.add_child(macro)
+
+        
 
 # def highlightCountry(country, countryMap):
 #     with open('A:/Django Projects/weather project/weather/app/countries.geojson') as handle:
