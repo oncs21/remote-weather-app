@@ -9,25 +9,6 @@
 </head>
     <link rel="stylesheet" href="{% static 'app/mapview.css' %}">
     
-
-    <div id="map-key">
-      <h2 style="text-align: center;">Key</h2>
-      <table id="map-key-table">
-        
-        <tr>
-          <td style="background-color: red;"></td>
-          <th>Bad Weather</th>
-        </tr>
-        <tr>
-          <td  style="background-color: yellow;"></td>
-          <th>Marginal Weather</th>
-        </tr>
-        <tr>
-          <td  style="background-color: green;"></td>
-          <th>Good Weather</th>
-        </tr>
-      </table>
-    </div>
     <div id="map">
       {{ m|safe }}
     </div>
