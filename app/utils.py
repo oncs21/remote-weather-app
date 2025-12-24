@@ -8,6 +8,8 @@ from .models import Visitor, User
 from branca.element import MacroElement, Template
 from django.conf import settings
 from pathlib import Path
+import json
+from jinja2 import Template
 
 
 DEFAULT_WEATHER_ICON_PATH = Path(settings.BASE_DIR) / "app" / "static" / "app" / "img" / "weather_unknown.png"
@@ -46,75 +48,91 @@ def get_client_ip(request):
     return ip
 
 def plotPoint(coords, pointMap, city):
+    jobs = []
+
     for i, (c, ci) in enumerate(zip(coords, city)):
-
-        markerColor = 'blue'
-
-        popup_div_id = f"weather_{i}"
-        popup_html = f"""
-        <div>
-          <b>{ci}</b><br>
-          <div id="{popup_div_id}">Click marker to load weather…</div>
-        </div>
-        """
+        lat = float(c[0])
+        lon = float(c[1])
 
         marker = folium.Marker(
-            location=[c[0], c[1]],
-            color=markerColor,
+            location=[lat, lon],
             icon=folium.CustomIcon(str(DEFAULT_WEATHER_ICON_PATH), icon_size=(20, 20))
-        )
+        ).add_to(pointMap)
 
-        marker.add_to(pointMap)
-        folium.Popup(popup_html, max_width=250).add_to(marker)
+        # initial popup content (will be replaced later)
+        folium.Popup(
+            f"<b>{ci}</b><br>Loading…",
+            max_width=250
+        ).add_to(marker)
 
-        js = f"""
-        {{% macro script(this, kwargs) %}}
-        const m_{i} = {marker.get_name()};
+        jobs.append({
+            "marker": marker.get_name(),
+            "lat": lat,
+            "lon": lon,
+            "city": str(ci),
+        })
 
-        function getWeatherIcon(code) {{
-            if (code <= 1) return "/static/app/img/sunny.png";
-            if (code >= 2 && code <= 3) return "/static/app/img/cloudy.png";
-            if (code == 61 || code == 63 || code == 65) return "/static/app/img/rainy.png";
-            if (code == 71 || code == 73 || code == 75) return "/static/app/img/snowy.png";
-            return "/static/app/img/weather_unknown.png";
+    map_var = pointMap.get_name()
+    jobs_json = json.dumps(jobs)
+
+    js = f"""
+    {{% macro script(this, kwargs) %}}
+    (function () {{
+      const map = {map_var};
+      const jobs = {jobs_json};
+
+      function getWeatherIcon(code) {{
+        code = Number(code);
+        if (code === 0) return "/static/app/img/sunny.png";
+        if (code >= 1 && code <= 3) return "/static/app/img/cloudy.png";
+        if (code >= 61 && code <= 65) return "/static/app/img/rainy.png";
+        if (code >= 71 && code <= 75) return "/static/app/img/snowy.png";
+        return "/static/app/img/weather_unknown.png";
+      }}
+
+      async function update(job) {{
+        const marker = window[job.marker];
+        if (!marker) return;
+
+        try {{
+          const r = await fetch(`/weather/?lat=${{job.lat}}&lon=${{job.lon}}&WMO_codes=true`);
+          const data = await r.json();
+
+          if (data.error) {{
+            marker.getPopup().setContent(`<b>${{job.city}}</b><br>Error: ${{data.error}}`);
+            return;
+          }}
+
+          marker.getPopup().setContent(
+            `<b>${{job.city}}</b><br>` +
+            `Temp: ${{data.temp_c}} °C<br>` +
+            `Wind: ${{data.wind_kph}} km/h<br>` +
+            `Code: ${{data.weather_code}}`
+          );
+
+          marker.setIcon(L.icon({{
+            iconUrl: getWeatherIcon(data.weather_code),
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30]
+          }}));
+        }} catch (e) {{
+          marker.getPopup().setContent(`<b>${{job.city}}</b><br>Failed to load weather`);
         }}
+      }}
 
-        m_{i}.on('click', function(e) {{
-            var target = document.getElementById("{popup_div_id}");
-            if (!target) return;
-            target.innerHTML = "Loading…";
+      map.whenReady(function () {{
+        jobs.forEach(update);
+      }});
+    }})();
+    {{% endmacro %}}
+    """
 
-            fetch("/weather/?lat={c[0]}&lon={c[1]}")
-              .then(r => r.json())
-              .then(data => {{
-                  if (data.error) {{
-                      target.innerHTML = "Error: " + data.error;
-                      return;
-                  }}
-                  target.innerHTML =
-                      "Temp: " + data.temp_c + " °C<br>" +
-                      "Wind: " + data.wind_kph + " km/h<br>" +
-                      "Code: " + data.weather_code;
+    macro = MacroElement()
+    macro._template = Template(js)
+    pointMap.get_root().add_child(macro)
 
-                  var iconUrl = getWeatherIcon(data.weather_code)
-                  var newIcon = L.icon({{
-                    iconUrl: iconUrl,
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 30],
-                    popupAnchor: [0, -30]
-                  }});
 
-                  m_{i}.setIcon(newIcon);
-              }})
-              .catch(err => {{
-                  target.innerHTML = "Failed to load weather";
-              }});
-        }});
-        {{% endmacro %}}
-        """
-        macro = MacroElement()
-        macro._template = Template(js)
-        marker.add_child(macro)
 
         
 

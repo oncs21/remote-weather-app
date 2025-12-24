@@ -495,19 +495,26 @@ def weather_api(request):
     lat = request.GET.get('lat')
     lon = request.GET.get('lon')
 
+    res = {}
+    add_vars = ""
+
+    if request.GET.get('WMO_codes'):
+        add_vars += "weather_code"
+
     url = (
-        f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,wind_speed_10m,weather_code"
+        f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,wind_speed_10m,{add_vars}"
     )
+
     r = requests.get(url, timeout=10)
     r.raise_for_status()
     data = r.json()
-
     current = data.get("current", {})
-    return JsonResponse({
-        "temp_c": current.get("temperature_2m"),
-        "wind_kph": current.get("wind_speed_10m"),
-        "weather_code": current.get("weather_code"),
-    })
+
+    res["temp_c"] = current.get("temperature_2m")
+    res["wind_kph"] = current.get("wind_speed_10m")
+    res["weather_code"] = current.get("weather_code")
+
+    return JsonResponse(res)
 
 
 def ToolsPageView(request):
