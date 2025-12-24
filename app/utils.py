@@ -56,10 +56,9 @@ def plotPoint(coords, pointMap, city):
 
         marker = folium.Marker(
             location=[lat, lon],
-            icon=folium.CustomIcon(str(DEFAULT_WEATHER_ICON_PATH), icon_size=(20, 20))
+            icon=folium.CustomIcon(str(DEFAULT_WEATHER_ICON_PATH), icon_size=(30, 30))
         ).add_to(pointMap)
 
-        # initial popup content (will be replaced later)
         folium.Popup(
             f"<b>{ci}</b><br>Loading…",
             max_width=250
@@ -85,8 +84,17 @@ def plotPoint(coords, pointMap, city):
         code = Number(code);
         if (code === 0) return "/static/app/img/sunny.png";
         if (code >= 1 && code <= 3) return "/static/app/img/cloudy.png";
-        if (code >= 61 && code <= 65) return "/static/app/img/rainy.png";
+        if (code >= 61 && code <= 65) {{
+            if (code === 61) return "/static/app/img/rain_intensity/slight.png";
+            if (code === 63) return "/static/app/img/rain_intensity/moderate.png";
+            return "/static/app/img/rain_intensity/heavy.png"; 
+        }}
         if (code >= 71 && code <= 75) return "/static/app/img/snowy.png";
+        if (code >= 80 && code <= 82) {{
+            if (code == 80) return "/static/app/img/rain_shower_intensity/slight.png";
+            if (code == 81) return "/static/app/img/rain_shower_intensity/moderate.png";
+            return "/static/app/img/rain_shower_intensity/violent.png";
+        }}
         return "/static/app/img/weather_unknown.png";
       }}
 
